@@ -126,3 +126,13 @@ rmdups (x:xs) = x : rmdups (filter (/= x) xs)
 
 isTaut :: Prop -> Bool 
 isTaut p = and [eval s p | s <- substs p]
+
+-- ex01
+mult :: Nat -> Nat -> Nat 
+mult Zero _ = Zero 
+mult _ Zero = Zero
+mult (Succ n) m = add m (mult n m)
+
+one = Succ Zero 
+two = add one one 
+three = add two one
