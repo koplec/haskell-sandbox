@@ -73,3 +73,31 @@ solution e ns n =
 
 -- (1+50)*(25-10)
 e = App Mul (App Add (Val 1) (Val 50)) (App Sub (Val 25) (Val 10))
+
+-- 6-6
+-- あるリストを2つの空でないリストに分割するすべての方法を組にして返す
+-- 再帰ってすごいね
+split :: [a] -> [([a], [a])]
+split [] = []
+split [_] = []
+split (x:xs) = ([x], xs) : [(x:ls,rs) | (ls, rs) <- split xs]
+
+-- 与えられた数がそれぞれ一回だけ使われている式をすべて返す
+exprs :: [Int] -> [Expr]
+exprs [] = [] -- 空リストからは式を生成できない
+exprs [n] = [Val n] -- 数値が一つdakenotoki
+exprs ns = [e | (ls, rs) <- split ns,
+                l <- exprs ls,
+                r <- exprs rs,
+                e <- combine l r]
+
+combine :: Expr -> Expr -> [Expr]
+combine l r = [App o l r | o <- ops]
+
+ops :: [Op]
+ops = [Add, Sub, Mul, Div]
+
+-- あるカウントダウン問題の解となる式をすべて返す
+solutions :: [Int] -> Int -> [Expr]
+solutions ns n = 
+    [e | ns' <- choices ns, e <- exprs ns', eval e == [n]]
