@@ -7,10 +7,15 @@ instance Show Op where
 
 -- 2つの正の整数に演算子を適用したときに正の整数が生成されるか調べる
 valid :: Op -> Int -> Int -> Bool
-valid Add _ _ = True 
+-- valid Add _ _ = True 
+-- valid Sub x y = x > y
+-- valid Mul _ _ = True 
+-- valid Div x y = x `mod` y == 0 --分数はダメ
+-- 9-9 代数的な性質を生かすで以下のように変更
+valid Add x y = x <= y --足し算は可換なので、小さい数から並ぶように制限して、生成数を減らす
 valid Sub x y = x > y
-valid Mul _ _ = True 
-valid Div x y = x `mod` y == 0 --分数はダメ
+valid Mul x y = x /= 1 && y /= 1 && x <= y -- 可換であることに加えて、単位元であることは無視する
+valid Div x y = y /= 1 && x `mod` y == 0
 
 -- 演算子を適用
 apply :: Op -> Int -> Int -> Int 
@@ -37,6 +42,7 @@ values (App _ l r) = values l ++ values r
 eval :: Expr -> [Int] 
 eval (Val n) = [n | n > 0]
 eval (App o l r) = [apply o x y | x <- eval l, y <- eval r, valid o x y]
+---- 9-8とも関係するかもしれないけど、validが使われていて、式が無効のものははじいている？
 
 -- 9-4 組み合わせ関数
 
@@ -100,4 +106,26 @@ ops = [Add, Sub, Mul, Div]
 -- あるカウントダウン問題の解となる式をすべて返す
 solutions :: [Int] -> Int -> [Expr]
 solutions ns n = 
-    [e | ns' <- choices ns, e <- exprs ns', eval e == [n]]
+    [e | ns' <- choices ns, e <- exprs ns', eval e == [n]] --このevalのタイミングでvalidが呼ばれている
+
+
+-- 9-8 生成と評価の方法を変える
+type Result = (Expr, Int)
+
+-- リストとして与えられた数がそれぞれ1回だけ使われている式をすべて返す関数
+results :: [Int] -> [Result]
+results [] = []
+results [n] = [(Val n, n)| n > 0]
+results ns = [res | (ls, rs) <- split ns,
+                    lx <- results ls, 
+                    ry <- results rs,
+                    res <- combine' lx ry ]
+
+-- 結果を演算子で組み合わせるためのヘルパー関数
+combine' :: Result -> Result -> [Result]
+combine' (l, x) (r, y) = 
+    [(App o l r, apply o x y)| o <- ops, valid o x y ] --combineの段階でvalidを呼ぶ
+
+solutions' :: [Int] -> Int -> [Expr]
+solutions' ns n = 
+    [e | ns' <- choices ns, (e, m) <- results ns', m == n]
