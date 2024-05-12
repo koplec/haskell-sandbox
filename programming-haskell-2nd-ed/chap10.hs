@@ -1,4 +1,5 @@
 import System.IO --hSetEchoのため
+import Data.Char
 
 -- 10.4 
 act :: IO (Char, Char)
@@ -88,3 +89,57 @@ valid board row num = board !! (row-1) >= num
 move :: Board -> Int -> Int -> Board 
 move board row num = [update r n | (r, n) <- zip [1..] board] --[1..]はrow行目を表す
                      where update r n = if r == row then n - num else n 
+
+
+-- 画面表示関数
+putRow :: Int -> Int -> IO()
+putRow row num = do putStr (show row)
+                    putStr ": "
+                    putStrLn (concat (replicate num "* "))
+
+putBoard :: Board -> IO ()
+putBoard [a,b,c,d,e] = do putRow 1 a 
+                          putRow 2 b
+                          putRow 3 c
+                          putRow 4 d
+                          putRow 5 e
+
+-- 入力から数字を読み取る
+getDigit :: String -> IO Int
+getDigit prompt = do putStr prompt
+                     x <- getChar
+                     newline
+                     if isDigit  x then
+                        return (digitToInt x)
+                     else
+                        do putStrLn "ERROR: Invalid digit"
+                           getDigit prompt
+
+newline :: IO()
+newline = putChar '\n'
+
+-- 10-7-3 
+playNim :: Board -> Int -> IO ()
+playNim board player =
+   do newline
+      putBoard board
+      if finished board then
+         do newline
+            putStr "Player "
+            putStr (show (next player))
+            putStrLn " wins!!"
+      else
+         do newline
+            putStr "Player "
+            putStrLn (show player)
+            row <- getDigit "Enter a row number :"
+            num <- getDigit "Stars to remove : "
+            if valid board row num then 
+               playNim (move board row num) (next player)
+            else
+               do newline
+                  putStrLn "ERROR: Invalid move"
+                  playNim board player
+
+nim :: IO()
+nim = playNim initial 1
