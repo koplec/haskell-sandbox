@@ -140,3 +140,77 @@ run' g p | wins O g = putStrLn "Player O wins!\n"
 
 prompt :: Player -> String 
 prompt p = "Player " ++ show p ++ ", enter your move:"
+
+-- 11.8 ゲームの木
+data Tree a = Node a [Tree a] deriving Show
+
+-- 与えられた局面を木の根として、現在のプレイヤーによる有効な指し手によって得られる格子を再帰的に生成
+gametree :: Grid -> Player -> Tree Grid 
+gametree g p = Node g [gametree g' (next p)| g' <- moves g p] --movesが空だったら生成されなくなる　Node a []になる
+
+-- 有効な手をリストとしてかえす
+moves :: Grid -> Player -> [Grid]
+moves g p
+  | won g = [] --すでに勝負がついている
+  | full g = [] 
+  | otherwise = concat [move g i p | i <- [0..((size^2)-1)]]
+
+
+-- 11.9 枝を刈る
+-- 深くなりすぎないように
+prune :: Int -> Tree a -> Tree a 
+prune 0 (Node x _) = Node x [] 
+prune n (Node x ts) = Node x [prune (n-1) t | t <- ts]
+
+depth :: Int 
+depth = 9
+
+-- 11.10 mini-max法
+
+---- ゲームの木のラベル付け
+minimax :: Tree Grid -> Tree (Grid, Player)
+minimax (Node g []) --grid自体は下記変わらない Girdが(Grid, Player)に変わっていることに注意
+  | wins O g = Node (g, O) []
+  | wins X g = Node (g, X) []
+  | otherwise = Node (g, B) []
+minimax (Node g ts) -- Treeの形は　Node g [Tree g]であることに注意 
+  | turn g == O = Node (g, minimum ps) ts'
+  | turn g == X = Node (g, maximum ps) ts'
+                  where
+                    ts' = map minimax ts
+                    ps = [p | Node (_, p) _ <- ts'] --ts'はすでにラベル付けがされているから、そこからplayerを抜き出す
+
+
+-- moveが次の盤面を生成する関数であったことを考える
+-- 次の手ではなく、次の手で生成されるボードの生成
+bestmove :: Grid -> Player -> Grid 
+bestmove g p = head [g' | Node (g',p') _ <- ts, p' == best] --根と同じラベルを持つ格子の先頭をとる 根と同じだから最善手？
+               where
+                 tree = prune depth (gametree g p) --指定した範囲でゲーム木を生成
+                 Node (_, best) ts = minimax tree  --minimax法でラベル付け 
+
+
+-- 11-11 人間vsコンピュータ
+
+main :: IO ()
+main = do hSetBuffering stdout NoBuffering
+          play empty O
+
+play :: Grid -> Player -> IO()
+play g p = do cls
+              goto (1, 1)
+              putGrid g
+              play' g p 
+
+play' :: Grid -> Player -> IO ()
+play' g p
+  | wins O g = putStrLn "Player O wins!\n"
+  | wins X g = putStrLn "Player X wins!\n"
+  | full g = putStrLn "It's a draw!\n"
+  | p == O = do i <- getNat (prompt p)
+                case move g i p of
+                    [] -> do putStrLn "ERROR: Invalid move"
+                             play' g p 
+                    [g'] -> play g' (next p)
+  | p == X = do putStr "Player X is thinking..."
+                (play $! (bestmove g p)) (next p)
