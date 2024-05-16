@@ -17,3 +17,18 @@ instance Functor Tree where
 -- instance Functor IO where 
 --     -- fmap :: (a -> b) -> IO a -> IO b
 --     fmap g mx = do {x <- mx; return (g x)}:
+
+-- アプリカティブスタイル
+-- 関数を複数の引数に適用する方法の一般
+-- 逐次処理と繰り返し
+
+-- モナドが分岐
+
+prods :: [Int] -> [Int] -> [Int ]
+-- prods xs ys = [x*y | x <- xs, y <- ys]
+prods xs ys = pure (*) <*> xs <*> ys
+
+getChars :: Int -> IO String 
+-- getChars 0 = return []
+-- getChars n = pure (:) <*> getChar <*> getChars (n-1)
+getChars n = sequenceA (replicate n getChar)
