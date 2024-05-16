@@ -91,3 +91,9 @@ instance Monad ST where
                   let (x, s') = app st s --ST aからSを取り除き
                   in app (f x) s' -- a -> ST bを適用する
                  )
+
+-- ☆12.3.3 木構造のラベル付け
+-- data Tree a = Leaf a | Node (Tree a ) (Tree a ) deriving Show 
+
+tree :: Tree Char 
+tree = Node (Node (Leaf 'a') (Leaf 'b')) (Leaf 'c')
