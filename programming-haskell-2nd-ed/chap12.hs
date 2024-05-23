@@ -202,3 +202,5 @@ join :: Monad m => m (m a) -> m a
 join mmx = mmx >>= \mx ->
            mx >>= \x ->
            return x
+
+-- 12.3.5 モナド則
