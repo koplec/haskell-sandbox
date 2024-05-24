@@ -57,4 +57,35 @@ instance Alternative Parser where
     p <|> q = P (\inp -> case parse p inp of 
                             [] -> parse q inp 
                             [(v, out)] -> [(v, out)]) --あれ、パースの結果っていつの間にか1つになってたっけ？
-                            
+
+-- 13.6 派生関数
+-- 述語pを満たす1文字用のパーサーsat 
+sat :: (Char -> Bool) -> Parser Char 
+sat p = do x <- item
+           if p x then return x else empty
+
+digit :: Parser Char 
+digit = sat isDigit 
+
+lower :: Parser Char 
+lower = sat isLower
+
+upper :: Parser Char
+upper = sat isUpper
+
+letter :: Parser Char
+letter = sat isAlpha
+
+alphanum :: Parser Char 
+alphanum = sat isAlphaNum
+
+char :: Char -> Parser Char
+char x = sat (== x)
+
+string :: String -> Parser String
+string [] = return []
+string (x:xs) = do char x
+                   string xs --文字列全体が利用された場合にのみ成功する
+                   return (x:xs)
+
+            
