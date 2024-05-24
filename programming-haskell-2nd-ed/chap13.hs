@@ -32,6 +32,7 @@ instance Applicative Parser where
                             [(g, out)] -> parse (fmap g px) out)
 
 instance Monad Parser where
+    -- returnはpureと同じ
     -- (>>=) :: Parser a -> (a -> Parser b) -> Parser b 
     p >>= f = P (\inp -> case parse p inp of 
                             [] -> []
@@ -45,3 +46,15 @@ three = do x <- item
            item 
            z <- item
            return (x, z)
+
+-- 13.5 選択
+-- Alternative 
+instance Alternative Parser where 
+    -- empty :: Parser a 
+    empty = P (\inp -> []) -- 常に失敗するパーサー
+    -- (<|>) :: Parser a -> Parser a -> Parser a 
+    -- パーサーの選択、最初のパーサーが失敗なら、次へ次へ
+    p <|> q = P (\inp -> case parse p inp of 
+                            [] -> parse q inp 
+                            [(v, out)] -> [(v, out)]) --あれ、パースの結果っていつの間にか1つになってたっけ？
+                            
