@@ -88,4 +88,85 @@ string (x:xs) = do char x
                    string xs --文字列全体が利用された場合にのみ成功する
                    return (x:xs)
 
+ident :: Parser String 
+ident = do x <- lower 
+           xs <- many alphanum
+           return (x:xs)
+
+nat :: Parser Int
+nat = do xs <- some digit
+         return (read xs)
+
+space :: Parser () --あとでつかうspaceを考えてmanyを使うことで、1つ空白でも２つ空白でも０個空白でも通るようになっている
+space = do many (sat isSpace)
+           return ()
             
+-- 整数のパーサー
+int :: Parser Int
+int  = do char '-'
+          n <- nat
+          return (-n)
+        <|> nat
+
+-- 13.7 空白の扱い
+-- 前後の空白を無視する
+token :: Parser a -> Parser a
+token p = do space
+             v <- p
+             space
+             return v
+
+-- 前後の空白を無視する識別子
+identifier :: Parser String
+identifier = token ident
+
+-- 前後の空白を無視する自然数
+natural :: Parser Int
+natural = token nat
+
+-- 前後の空白を無視する整数
+integer :: Parser Int
+integer = token int
+
+-- 特定の文字列のパーサー
+symbol :: String -> Parser String 
+symbol xs = token (string xs)
+
+-- ここまでくるとかっこいいね
+nats :: Parser [Int]
+nats = do symbol "["
+          n <- natural
+          ns <- many (do symbol ","
+                         natural)
+          symbol "]"
+          return (n:ns)
+
+-- 13.8 数式
+expr :: Parser Int 
+expr = do t <- term
+          do symbol "+"
+             e <- expr
+             return (t + e)
+             <|> return t
+
+
+term :: Parser Int
+term = do f <- factor
+          do symbol "*"
+             t <- term
+             return (f * t)
+             <|> return f 
+
+factor :: Parser Int
+factor = do symbol "("
+            e <- expr
+            symbol ")"
+            return e
+            <|> natural 
+
+eval :: String -> Int
+eval xs = case (parse expr xs) of 
+            [(n, [])] -> n
+            [(_, out)] -> error ("Unused input" ++ out)
+            [] -> error "Invalid input"
+
