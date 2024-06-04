@@ -31,3 +31,7 @@ instance Foldable Tree where
 tree :: Tree Int 
 tree = Node (Node (Leaf 1) (Leaf 2)) (Leaf 3)
 
+-- 14.2.3 汎用的な関数
+average :: Foldable t => t Int -> Int 
+average ns = sum ns `div` length ns
+
