@@ -35,3 +35,26 @@ tree = Node (Node (Leaf 1) (Leaf 2)) (Leaf 3)
 average :: Foldable t => t Int -> Int 
 average ns = sum ns `div` length ns
 
+-- 14.3 Traversable 
+dec :: Int -> Maybe Int 
+dec n = if n > 0 then Just (n - 1) else Nothing
+
+-- traverse dec [1,2,0]で一つNothingになったらなんでぜんぶNothingになるのか
+-- それは、decがApplicativeを持っているから
+-- traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
+-- traverseは、Applicativeを返すから、一つでもNothingがあると、それ以降の計算は行われない
+
+
+
+
+-- 14.3.1 例
+-- TreeをTraversableにするため、Functorを定義する
+instance Functor Tree where
+    -- fmap :: (a -> b) -> Tree a -> Tree b 
+    fmap g (Leaf x) = Leaf (g x)
+    fmap g (Node l r) = Node (fmap g l) (fmap g r)
+
+instance Traversable Tree where 
+    -- traverse :: Applicative f => ( a -> f b ) -> Tree a -> f (Tree b)
+    traverse g (Leaf x) = pure Leaf <*> g x -- Leaf <$> g x でもいい
+    traverse g (Node l r) = pure Node <*> traverse g l <*> traverse g r
